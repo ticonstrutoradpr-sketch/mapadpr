@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Mapa de calor DPR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Archivo:wght@300;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --vermelho: #ff0000; --grafite: #505050; --cinza: #a0a0a0; --preto: #050505; --branco: #fff; --linha: #1e1e1e; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--preto); color: var(--branco); font-family: 'Archivo', sans-serif; font-weight: 300; min-height: 100vh; }
+    header { padding: 40px 6% 24px; border-bottom: 1px solid var(--linha); display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+    .marca { font-size: 0.6rem; letter-spacing: 8px; text-transform: uppercase; color: var(--vermelho); display: block; margin-bottom: 10px; }
+    h1 { font-family: 'Syncopate', sans-serif; font-size: clamp(1.4rem, 3vw, 2.2rem); letter-spacing: -1px; text-transform: uppercase; line-height: 1; }
+    h1 span { color: var(--vermelho); }
+    .controles { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    input, select, button { font: inherit; font-size: 0.9rem; background: #111; color: var(--branco); border: 1px solid #333; padding: 10px 12px; }
+    button { background: var(--vermelho); border-color: var(--vermelho); cursor: pointer; letter-spacing: 2px; text-transform: uppercase; font-size: 0.7rem; font-weight: 600; }
+    button.sec { background: transparent; border-color: #444; }
+    button:hover { filter: brightness(1.15); }
+    main { padding: 24px 6% 60px; }
+    .aviso { color: var(--cinza); font-size: 0.9rem; margin: 12px 0 20px; }
+    .aviso b { color: var(--branco); font-weight: 600; }
+    .resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .card { border: 1px solid var(--linha); padding: 14px 16px; border-left: 3px solid var(--vermelho); }
+    .card small { display: block; font-size: 0.6rem; letter-spacing: 3px; text-transform: uppercase; color: var(--cinza); margin-bottom: 6px; }
+    .card strong { font-size: 1.6rem; font-weight: 600; }
+    .tabela { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .tabela th, .tabela td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--linha); vertical-align: top; }
+    .tabela th { font-size: 0.6rem; letter-spacing: 3px; text-transform: uppercase; color: var(--cinza); font-weight: 600; }
+    .tabela td.num { font-variant-numeric: tabular-nums; text-align: right; }
+    .tabela th.num { text-align: right; }
+    .pagina { font-weight: 600; word-break: break-all; }
+    .pagina small { display: block; color: var(--cinza); font-weight: 300; }
+    .acoes a { display: inline-block; margin: 2px 6px 2px 0; padding: 6px 10px; border: 1px solid #444; color: var(--branco); text-decoration: none; font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; }
+    .acoes a:hover { border-color: var(--vermelho); }
+    .barra { height: 6px; background: #1a1a1a; margin-top: 6px; }
+    .barra i { display: block; height: 100%; background: var(--vermelho); }
+    .vazio { color: var(--cinza); padding: 40px 0; text-align: center; }
+    .wrap { overflow-x: auto; }
+    @media (max-width: 720px) { header { padding: 28px 5% 18px; } main { padding: 18px 5% 40px; } .tabela { font-size: 0.82rem; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <span class="marca">DPR Construtora</span>
+      <h1>Mapa de <span>calor</span></h1>
+    </div>
+    <form class="controles" id="form">
+      <input type="password" id="senha" placeholder="Senha do painel" autocomplete="current-password" required>
+      <select id="dias">
+        <option value="7">Últimos 7 dias</option>
+        <option value="30" selected>Últimos 30 dias</option>
+        <option value="90">Últimos 90 dias</option>
+        <option value="180">Últimos 180 dias</option>
+      </select>
+      <button type="submit">Carregar</button>
+      <button type="button" class="sec" id="sair">Sair</button>
+    </form>
+  </header>
+  <main>
+    <p class="aviso" id="aviso">Digite a senha e carregue. Cada linha é uma página do site. <b>Abrir mapa</b> abre a página real com o calor desenhado por cima.</p>
+    <div class="resumo" id="resumo" hidden></div>
+    <div class="wrap">
+      <table class="tabela" id="tabela" hidden>
+        <thead>
+          <tr>
+            <th>Página</th>
+            <th class="num">Visitas</th>
+            <th class="num">Sessões</th>
+            <th class="num">Cliques</th>
+            <th class="num">Celular</th>
+            <th>Rolagem média</th>
+            <th>Mapas</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="vazio" id="vazio" hidden>Nenhum dado ainda. O coletor precisa estar nas páginas do site e alguém precisa ter visitado.</div>
+  </main>
+  <script>
+    (function () {
+      'use strict';
+      var form = document.getElementById('form');
+      var senha = document.getElementById('senha');
+      var dias = document.getElementById('dias');
+      var aviso = document.getElementById('aviso');
+      var resumo = document.getElementById('resumo');
+      var tabela = document.getElementById('tabela');
+      var corpo = tabela.querySelector('tbody');
+      var vazio = document.getElementById('vazio');
+      var sair = document.getElementById('sair');
+
+      function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+      function lembrada() { try { return sessionStorage.getItem('mapadpr_chave') || ''; } catch (e) { return ''; } }
+      function lembrar(v) { try { if (v) sessionStorage.setItem('mapadpr_chave', v); else sessionStorage.removeItem('mapadpr_chave'); } catch (e) {} }
+
+      function linkMapa(site, pagina, tipo, d) {
+        return 'https://' + site + pagina + '?mapadpr=' + tipo + '&dias=' + d + '&disp=todos';
+      }
+
+      function render(d) {
+        var lista = d.paginas || [];
+        var visitas = 0, cliques = 0, sessoes = 0, mobile = 0;
+        lista.forEach(function (p) { visitas += p.visitas || 0; cliques += p.cliques || 0; sessoes += p.sessoes || 0; mobile += p.visitas_mobile || 0; });
+        resumo.hidden = false;
+        resumo.innerHTML =
+          '<div class="card"><small>Páginas com dados</small><strong>' + lista.length + '</strong></div>' +
+          '<div class="card"><small>Visitas</small><strong>' + visitas + '</strong></div>' +
+          '<div class="card"><small>Sessões</small><strong>' + sessoes + '</strong></div>' +
+          '<div class="card"><small>Cliques</small><strong>' + cliques + '</strong></div>' +
+          '<div class="card"><small>Visitas no celular</small><strong>' + (visitas ? Math.round(mobile / visitas * 100) : 0) + '%</strong></div>';
+        corpo.innerHTML = '';
+        if (!lista.length) { tabela.hidden = true; vazio.hidden = false; return; }
+        vazio.hidden = true; tabela.hidden = false;
+        lista.forEach(function (p) {
+          var tr = document.createElement('tr');
+          var prof = p.profundidade_media || 0;
+          var pctMobile = p.visitas ? Math.round((p.visitas_mobile || 0) / p.visitas * 100) : 0;
+          tr.innerHTML =
+            '<td class="pagina">' + esc(p.pagina) + '<small>' + esc(p.site) + '</small></td>' +
+            '<td class="num">' + (p.visitas || 0) + '</td>' +
+            '<td class="num">' + (p.sessoes || 0) + '</td>' +
+            '<td class="num">' + (p.cliques || 0) + '</td>' +
+            '<td class="num">' + pctMobile + '%</td>' +
+            '<td>' + (prof ? prof + '%' : '-') + '<div class="barra"><i style="width:' + prof + '%"></i></div></td>' +
+            '<td class="acoes"><a href="' + esc(linkMapa(p.site, p.pagina, 'click', d.dias)) + '" target="_blank" rel="noopener">Cliques</a><a href="' + esc(linkMapa(p.site, p.pagina, 'move', d.dias)) + '" target="_blank" rel="noopener">Movimento</a></td>';
+          corpo.appendChild(tr);
+        });
+      }
+
+      function carregar() {
+        var chave = senha.value || lembrada();
+        if (!chave) return;
+        aviso.textContent = 'Carregando...';
+        fetch('/api/paginas?dias=' + encodeURIComponent(dias.value), { headers: { 'x-mapa-chave': chave } })
+          .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
+          .then(function (x) {
+            if (x.status === 401) { lembrar(''); aviso.textContent = 'Senha incorreta.'; return; }
+            if (!x.j || !x.j.ok) { aviso.textContent = 'Não foi possível carregar (' + ((x.j && x.j.motivo) || x.status) + '). Se for "banco", o Postgres ainda não foi criado na Vercel.'; return; }
+            lembrar(chave);
+            aviso.innerHTML = 'Últimos <b>' + x.j.dias + ' dias</b>. <b>Cliques</b> e <b>Movimento</b> abrem a página real do site com o calor por cima; lá dá para trocar período e aparelho.';
+            render(x.j);
+          })
+          .catch(function () { aviso.textContent = 'Falha de rede.'; });
+      }
+
+      form.addEventListener('submit', function (e) { e.preventDefault(); carregar(); });
+      dias.addEventListener('change', function () { if (senha.value || lembrada()) carregar(); });
+      sair.addEventListener('click', function () { lembrar(''); senha.value = ''; resumo.hidden = true; tabela.hidden = true; vazio.hidden = true; aviso.textContent = 'Sessão encerrada.'; });
+      if (lembrada()) { senha.value = lembrada(); carregar(); }
+    })();
+  </script>
+</body>
+</html>

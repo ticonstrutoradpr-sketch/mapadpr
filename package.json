@@ -1,0 +1,16 @@
+{
+  "name": "mapadpr",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mapa de calor do site da DPR Construtora: coleta anonima de cliques, movimento e rolagem, com painel e mapa desenhado sobre a pagina real.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}
