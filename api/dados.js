@@ -1,14 +1,13 @@
 // GET /api/dados?site=&pagina=&tipo=click|move&dias=30&disp=todos: pontos agregados de uma pagina
-// para o mapa (t.js desenha por cima da pagina real). Exige a senha (x-mapa-chave ou ?chave=).
+// para o mapa (t.js desenha por cima da pagina real). Sem senha, por decisao da dona (21/09): os
+// dados sao anonimos e agregados; quem tem o endereco abre direto.
 import { parametrosDeConsulta } from '../lib/eventos.js';
 import { consultar, bancoConfigurado } from '../lib/db.js';
 import { preflight, json } from '../lib/http.js';
-import { exigirChave } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (preflight(req, res)) return;
   if (req.method !== 'GET') return json(res, 405, { ok: false, motivo: 'metodo' });
-  if (!exigirChave(req)) return json(res, 401, { ok: false, motivo: 'senha' });
   const p = parametrosDeConsulta(req.query);
   if (!p.site) return json(res, 400, { ok: false, motivo: 'site' });
   if (!bancoConfigurado()) return json(res, 503, { ok: false, motivo: 'banco' });

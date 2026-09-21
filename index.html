@@ -49,19 +49,17 @@
       <h1>Mapa de <span>calor</span></h1>
     </div>
     <form class="controles" id="form">
-      <input type="password" id="senha" placeholder="Senha do painel" autocomplete="current-password" required>
       <select id="dias">
         <option value="7">Últimos 7 dias</option>
         <option value="30" selected>Últimos 30 dias</option>
         <option value="90">Últimos 90 dias</option>
         <option value="180">Últimos 180 dias</option>
       </select>
-      <button type="submit">Carregar</button>
-      <button type="button" class="sec" id="sair">Sair</button>
+      <button type="submit">Atualizar</button>
     </form>
   </header>
   <main>
-    <p class="aviso" id="aviso">Digite a senha e carregue. Cada linha é uma página do site. <b>Abrir mapa</b> abre a página real com o calor desenhado por cima.</p>
+    <p class="aviso" id="aviso">Carregando... Cada linha é uma página do site. <b>Cliques</b> e <b>Movimento</b> abrem a página real com o calor desenhado por cima.</p>
     <div class="resumo" id="resumo" hidden></div>
     <div class="wrap">
       <table class="tabela" id="tabela" hidden>
@@ -85,18 +83,14 @@
     (function () {
       'use strict';
       var form = document.getElementById('form');
-      var senha = document.getElementById('senha');
       var dias = document.getElementById('dias');
       var aviso = document.getElementById('aviso');
       var resumo = document.getElementById('resumo');
       var tabela = document.getElementById('tabela');
       var corpo = tabela.querySelector('tbody');
       var vazio = document.getElementById('vazio');
-      var sair = document.getElementById('sair');
 
       function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-      function lembrada() { try { return sessionStorage.getItem('mapadpr_chave') || ''; } catch (e) { return ''; } }
-      function lembrar(v) { try { if (v) sessionStorage.setItem('mapadpr_chave', v); else sessionStorage.removeItem('mapadpr_chave'); } catch (e) {} }
 
       function linkMapa(site, pagina, tipo, d) {
         return 'https://' + site + pagina + '?mapadpr=' + tipo + '&dias=' + d + '&disp=todos';
@@ -133,15 +127,11 @@
       }
 
       function carregar() {
-        var chave = senha.value || lembrada();
-        if (!chave) return;
         aviso.textContent = 'Carregando...';
-        fetch('/api/paginas?dias=' + encodeURIComponent(dias.value), { headers: { 'x-mapa-chave': chave } })
+        fetch('/api/paginas?dias=' + encodeURIComponent(dias.value))
           .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
           .then(function (x) {
-            if (x.status === 401) { lembrar(''); aviso.textContent = 'Senha incorreta.'; return; }
-            if (!x.j || !x.j.ok) { aviso.textContent = 'Não foi possível carregar (' + ((x.j && x.j.motivo) || x.status) + '). Se for "banco", o Postgres ainda não foi criado na Vercel.'; return; }
-            lembrar(chave);
+            if (!x.j || !x.j.ok) { aviso.textContent = 'Não foi possível carregar (' + ((x.j && x.j.motivo) || x.status) + '). Se for "banco", o Postgres ainda não foi criado ou conectado a este ambiente na Vercel.'; return; }
             aviso.innerHTML = 'Últimos <b>' + x.j.dias + ' dias</b>. <b>Cliques</b> e <b>Movimento</b> abrem a página real do site com o calor por cima; lá dá para trocar período e aparelho.';
             render(x.j);
           })
@@ -149,9 +139,8 @@
       }
 
       form.addEventListener('submit', function (e) { e.preventDefault(); carregar(); });
-      dias.addEventListener('change', function () { if (senha.value || lembrada()) carregar(); });
-      sair.addEventListener('click', function () { lembrar(''); senha.value = ''; resumo.hidden = true; tabela.hidden = true; vazio.hidden = true; aviso.textContent = 'Sessão encerrada.'; });
-      if (lembrada()) { senha.value = lembrada(); carregar(); }
+      dias.addEventListener('change', carregar);
+      carregar();
     })();
   </script>
 </body>

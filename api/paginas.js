@@ -1,14 +1,13 @@
 // GET /api/paginas?dias=30: uma linha por pagina do site, com visitas, sessoes, cliques, movimentos,
-// profundidade media de rolagem e quanto veio de celular. Alimenta o painel. Exige a senha.
+// profundidade media de rolagem e quanto veio de celular. Alimenta o painel. Sem senha, por decisao
+// da dona (21/09): dados anonimos e agregados, abre direto.
 import { parametrosDeConsulta } from '../lib/eventos.js';
 import { consultar, bancoConfigurado } from '../lib/db.js';
 import { preflight, json } from '../lib/http.js';
-import { exigirChave } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (preflight(req, res)) return;
   if (req.method !== 'GET') return json(res, 405, { ok: false, motivo: 'metodo' });
-  if (!exigirChave(req)) return json(res, 401, { ok: false, motivo: 'senha' });
   const p = parametrosDeConsulta(req.query);
   if (!bancoConfigurado()) return json(res, 503, { ok: false, motivo: 'banco' });
   try {

@@ -6,8 +6,8 @@
    fracao da largura do documento e a vertical em pixels, para o mapa acompanhar larguras diferentes.
    Nada de nome, e-mail ou IP. Os lotes saem a cada 5 s e ao sair da pagina, por sendBeacon.
 
-   MAPA: pede a senha uma vez (fica na aba), busca os pontos agregados e desenha em canvas sobre o
-   documento, com um painel para trocar tipo, periodo e aparelho. Sem biblioteca. */
+   MAPA: busca os pontos agregados e desenha em canvas sobre o documento, com um painel para trocar
+   tipo, periodo e aparelho. Sem senha (decisao da dona, 21/09) e sem biblioteca. */
 (function () {
   'use strict';
   var script = document.currentScript;
@@ -100,13 +100,6 @@
     var tipo = params.get('mapadpr') === 'move' ? 'move' : 'click';
     var dias = params.get('dias') || '30';
     var disp = params.get('disp') || 'todos';
-    var chave = '';
-    try { chave = sessionStorage.getItem('mapadpr_chave') || ''; } catch (e) { chave = ''; }
-    if (!chave) {
-      chave = window.prompt('Senha do mapa de calor:') || '';
-      if (!chave) return;
-      try { sessionStorage.setItem('mapadpr_chave', chave); } catch (e) { /* segue */ }
-    }
 
     var canvas = document.createElement('canvas');
     canvas.setAttribute('aria-hidden', 'true');
@@ -186,10 +179,7 @@
     }
 
     var url = BASE + '/api/dados?site=' + encodeURIComponent(SITE) + '&pagina=' + encodeURIComponent(PAGINA) + '&tipo=' + tipo + '&dias=' + encodeURIComponent(dias) + '&disp=' + encodeURIComponent(disp);
-    fetch(url, { headers: { 'x-mapa-chave': chave } }).then(function (r) {
-      if (r.status === 401) { try { sessionStorage.removeItem('mapadpr_chave'); } catch (e) {} info.textContent = 'Senha incorreta. Recarregue a página.'; return null; }
-      return r.json();
-    }).then(function (d) {
+    fetch(url).then(function (r) { return r.json(); }).then(function (d) {
       if (!d) return;
       if (!d.ok) { info.textContent = 'Não foi possível carregar (' + (d.motivo || 'erro') + ').'; return; }
       pontos = d.pontos || [];

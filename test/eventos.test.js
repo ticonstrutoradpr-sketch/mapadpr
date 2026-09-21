@@ -2,7 +2,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { dispositivo, limparPagina, limparSite, sanitizarLote, parametrosDeConsulta, LIMITE_POR_LOTE } from '../lib/eventos.js';
-import { chaveConfere } from '../lib/auth.js';
 import { corpoDoRequest } from '../lib/http.js';
 
 test('dispositivo pela largura da janela', () => {
@@ -69,14 +68,6 @@ test('parametros de consulta fechados nos valores permitidos', () => {
   assert.deepEqual(parametrosDeConsulta({ dias: '999', tipo: 'hack', disp: 'tv' }),
     { site: '', pagina: '/', dias: 30, tipo: 'click', dispositivo: 'todos' });
   assert.equal(parametrosDeConsulta().dias, 30);
-});
-
-test('senha: confere em tempo constante, e sem senha definida nada passa', () => {
-  assert.equal(chaveConfere('abc', 'abc'), true);
-  assert.equal(chaveConfere('abd', 'abc'), false);
-  assert.equal(chaveConfere('', 'abc'), false);
-  assert.equal(chaveConfere('abc', ''), false);
-  assert.equal(chaveConfere('abc', undefined), false);
 });
 
 test('corpo do request: texto, buffer e objeto', () => {
