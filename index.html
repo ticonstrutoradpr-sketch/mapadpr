@@ -38,6 +38,8 @@
     .barra { height: 6px; background: #1a1a1a; margin-top: 6px; }
     .barra i { display: block; height: 100%; background: var(--vermelho); }
     .vazio { color: var(--cinza); padding: 40px 0; text-align: center; }
+    .demo { background: var(--vermelho); color: var(--branco); padding: 10px 6%; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; }
+    .demo span { font-weight: 300; text-transform: none; letter-spacing: 0; }
     .wrap { overflow-x: auto; }
     @media (max-width: 720px) { header { padding: 28px 5% 18px; } main { padding: 18px 5% 40px; } .tabela { font-size: 0.82rem; } }
   </style>
@@ -58,6 +60,7 @@
       <button type="submit">Atualizar</button>
     </form>
   </header>
+  <div class="demo" id="demo" hidden>Dados de demonstração. <span>Números inventados só para mostrar o painel. Quando a planilha for conectada (APPS_SCRIPT_URL na Vercel), os dados reais entram no lugar.</span></div>
   <main>
     <p class="aviso" id="aviso">Carregando... Cada linha é uma página do site. <b>Cliques</b> e <b>Movimento</b> abrem a página real com o calor desenhado por cima.</p>
     <div class="resumo" id="resumo" hidden></div>
@@ -89,6 +92,14 @@
       var tabela = document.getElementById('tabela');
       var corpo = tabela.querySelector('tbody');
       var vazio = document.getElementById('vazio');
+      var demo = document.getElementById('demo');
+      var MOTIVOS = {
+        planilha: 'a planilha ainda não foi conectada',
+        acesso: 'o App da Web precisa estar publicado com acesso para qualquer pessoa',
+        resposta: 'o Apps Script devolveu algo inesperado',
+        consulta: 'não deu para consultar a planilha',
+        rede: 'falha de rede ao consultar a planilha'
+      };
 
       function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
@@ -131,7 +142,12 @@
         fetch('/api/paginas?dias=' + encodeURIComponent(dias.value))
           .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
           .then(function (x) {
-            if (!x.j || !x.j.ok) { aviso.textContent = 'Não foi possível carregar (' + ((x.j && x.j.motivo) || x.status) + '). Se for "banco", o Postgres ainda não foi criado ou conectado a este ambiente na Vercel.'; return; }
+            if (!x.j || !x.j.ok) {
+              var m = (x.j && x.j.motivo) || String(x.status);
+              aviso.textContent = 'Não foi possível carregar: ' + (MOTIVOS[m] || m) + '.';
+              return;
+            }
+            demo.hidden = !x.j.demo;
             aviso.innerHTML = 'Últimos <b>' + x.j.dias + ' dias</b>. <b>Cliques</b> e <b>Movimento</b> abrem a página real do site com o calor por cima; lá dá para trocar período e aparelho.';
             render(x.j);
           })

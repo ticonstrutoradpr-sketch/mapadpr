@@ -7,7 +7,8 @@
    Nada de nome, e-mail ou IP. Os lotes saem a cada 5 s e ao sair da pagina, por sendBeacon.
 
    MAPA: busca os pontos agregados e desenha em canvas sobre o documento, com um painel para trocar
-   tipo, periodo e aparelho. Sem senha (decisao da dona, 21/09) e sem biblioteca. */
+   tipo, periodo e aparelho. Sem senha (decisao da dona, 21/09) e sem biblioteca. Enquanto a planilha
+   nao esta conectada, a resposta vem com demo: true (dados inventados) e o painel avisa. */
 (function () {
   'use strict';
   var script = document.currentScript;
@@ -178,12 +179,14 @@
       return x.getImageData(0, 0, 256, 1).data;
     }
 
-    var url = BASE + '/api/dados?site=' + encodeURIComponent(SITE) + '&pagina=' + encodeURIComponent(PAGINA) + '&tipo=' + tipo + '&dias=' + encodeURIComponent(dias) + '&disp=' + encodeURIComponent(disp);
+    // `h` e a altura real desta pagina: a demonstracao usa para espalhar os pontos dentro dela.
+    var url = BASE + '/api/dados?site=' + encodeURIComponent(SITE) + '&pagina=' + encodeURIComponent(PAGINA) + '&tipo=' + tipo + '&dias=' + encodeURIComponent(dias) + '&disp=' + encodeURIComponent(disp) + '&h=' + docH();
     fetch(url).then(function (r) { return r.json(); }).then(function (d) {
       if (!d) return;
       if (!d.ok) { info.textContent = 'Não foi possível carregar (' + (d.motivo || 'erro') + ').'; return; }
       pontos = d.pontos || [];
-      info.innerHTML = (tipo === 'click' ? 'Cliques' : 'Pontos de movimento') + ': <b>' + d.total + '</b><br>Visitas: <b>' + d.visitas + '</b> (' + d.sessoes + ' sessões)' + (d.profundidadeMedia ? '<br>Rolagem média: <b>' + d.profundidadeMedia + '%</b>' : '');
+      info.innerHTML = (d.demo ? '<b style="color:#ff0000">DEMONSTRAÇÃO</b> (dados inventados)<br>' : '') +
+        (tipo === 'click' ? 'Cliques' : 'Pontos de movimento') + ': <b>' + d.total + '</b><br>Visitas: <b>' + d.visitas + '</b> (' + d.sessoes + ' sessões)' + (d.profundidadeMedia ? '<br>Rolagem média: <b>' + d.profundidadeMedia + '%</b>' : '');
       desenhar();
     }).catch(function () { info.textContent = 'Falha de rede ao carregar o mapa.'; });
 
